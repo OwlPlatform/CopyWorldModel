@@ -112,11 +112,23 @@ origin_to_data.each_pair {|origin, uri_attrs|
 		puts "Error connecting to the destination world model! Aborting!"
 		exit
 	end
-	#TODO Fixme: only push subsets of the the values (maybe 100-1000 at a time)
+	#Push subsets of the the values 100 at a time
 	uri_attrs.each_pair{|uri, attributes|
 		#Push each set of attributes to the world model, autocreating the object if necessary
 		puts "\tPushing data for #{uri} (#{attributes.length} values)"
-		#dest_wm.pushData([WMData.new(uri, attributes)], true)
+		#Remember original total so progress can be recorded
+		total = attributes.length
+		pushed = 0.0
+		#Send the attributes in batches of 100, shrinking the number left each time
+		while (not attributes.empty?)
+			#Send the first 100 elements
+			to_push = attributes[0,100]
+			dest_wm.pushData([WMData.new(uri, to_push)], true)
+			pushed += to_push.length
+			puts "\t\t(#{100*pushed / total}% complete)"
+			#Clip off the front that we've just sent
+			attributes = attributes.drop 100
+		end
 	}
 	#Close the connection and open socket
 	dest_wm.close()
